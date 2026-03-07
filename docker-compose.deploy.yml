@@ -1,1 +1,131 @@
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  Famagram — Deployment Compose (pre-built images from Docker Hub)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+#  QUICK START — for first-time setup
+#  ─────────────────────────────────────────────────────────────────────────────
+#  1. Install Docker Desktop  https://www.docker.com/products/docker-desktop/
+#     Make sure it's running before you continue.
+#
+#  2. Copy the sample config:
+#        cp .env.example .env
+#     (on Windows: just rename the file)
+#
+#  3. Open .env in any text editor and fill in the required values:
+#
+#       POSTGRES_PASSWORD   → make up a strong database password
+#       SESSION_SECRET      → long random string (64+ chars)
+#                             generate: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+#       ENCRYPTION_KEY      → 64-character hex string (32 random bytes)
+#                             generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+#       ADMIN_EMAIL         → email for the auto-created admin account
+#       ADMIN_PASSWORD      → strong password (20+ chars with upper, lower, number, symbol)
+#       FRONTEND_URL        → address people will use to reach the app
+#                             local machine  → http://localhost
+#                             home server    → http://192.168.1.x
+#                             public domain  → https://photos.yourfamily.com
+#
+#  4. Start the app:
+#        docker compose -f docker-compose.deploy.yml up -d
+#
+#  5. Open your browser at FRONTEND_URL (default: http://localhost).
+#     Sign in with ADMIN_EMAIL / ADMIN_PASSWORD from your .env.
+#     ⚠️  Change the admin password right after your first login!
+#
+#  ─────────────────────────────────────────────────────────────────────────────
+#  INVITING FAMILY MEMBERS
+#  ─────────────────────────────────────────────────────────────────────────────
+#    1. Log in as admin.
+#    2. Tap the gear icon (Admin Panel) at the bottom of the screen.
+#    3. Go to the "Invites" tab and create a link.
+#    4. Share the link — they click it, register, and are instantly approved.
+#
+#  ─────────────────────────────────────────────────────────────────────────────
+#  USER ROLES  (manage in Admin Panel → Users)
+#  ─────────────────────────────────────────────────────────────────────────────
+#    POSTER  → can upload photos & videos, comment, like  (default for new users)
+#    READER  → can comment and like, but cannot upload
+#    VIEWER  → read-only: can view posts only, no interactions
+#
+#  ─────────────────────────────────────────────────────────────────────────────
+#  USEFUL COMMANDS
+#  ─────────────────────────────────────────────────────────────────────────────
+#    Stop:    docker compose -f docker-compose.deploy.yml down
+#    Update:  docker compose -f docker-compose.deploy.yml pull \
+#             && docker compose -f docker-compose.deploy.yml up -d
+#    Logs:    docker compose -f docker-compose.deploy.yml logs -f
+#    Status:  docker compose -f docker-compose.deploy.yml ps
+#
+#  ─────────────────────────────────────────────────────────────────────────────
+#  ⚠️  BACK UP YOUR .env FILE — ESPECIALLY ENCRYPTION_KEY
+#  All photos and videos are encrypted using ENCRYPTION_KEY.
+#  If you lose that value you will permanently lose access to all your media.
+# ══════════════════════════════════════════════════════════════════════════════
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: famagram-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: famagram
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d famagram"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: nathanbascom/famagram-backend:latest
+    container_name: famagram-backend
+    restart: unless-stopped
+    pull_policy: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/famagram
+      AUTH_MODE: ${AUTH_MODE:-local}
+      SESSION_SECRET: ${SESSION_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-}
+      GOOGLE_ADMIN_EMAIL: ${GOOGLE_ADMIN_EMAIL:-}
+      EXPORT_PASSWORD: ${EXPORT_PASSWORD:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend:
+    image: nathanbascom/famagram-frontend:latest
+    container_name: famagram-frontend
+    restart: unless-stopped
+    pull_policy: always
+    depends_on:
+      - backend
+
+  nginx:
+    image: nathanbascom/famagram-nginx:latest
+    container_name: famagram-nginx
+    restart: unless-stopped
+    pull_policy: always
+    ports:
+      - "${PORT:-80}:80"
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  postgres_data:
+  uploads_data:
