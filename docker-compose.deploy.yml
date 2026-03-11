@@ -23,7 +23,7 @@
 #       APP_URL             → full public URL of your app (scheme + host + optional port)
 #                             local machine  → http://localhost
 #                             home server    → http://192.168.1.x
-#                             public domain  → https://photos.yourfamily.com
+#                             public domain  → https://photos.example.com
 #       PORT                → host port Docker exposes on this machine (default 80)
 #                             Use PORT=5055 if you need a non-standard port, and include
 #                             the port in APP_URL too (e.g. APP_URL=http://host:8088)
