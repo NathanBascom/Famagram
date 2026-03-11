@@ -24,18 +24,43 @@ A private, self-hosted photo and video sharing app for families and small groups
 
 ## Screenshots
 
-<div align="center">
-  <img src="media/ReadmeImages/IMG_8935.PNG" width="30%" alt="Home Feed">
-  <img src="media/ReadmeImages/IMG_8936.PNG" width="30%" alt="Profile">
-  <img src="media/ReadmeImages/IMG_8938.PNG" width="30%" alt="Likes & Comments">
-  <br><br>
-  <img src="media/ReadmeImages/IMG_8939.PNG" width="30%" alt="Video Feed">
-  <img src="media/ReadmeImages/IMG_8940.PNG" width="30%" alt="User Profile">
-  <img src="media/ReadmeImages/IMG_8941.PNG" width="30%" alt="Admin Panel">
-  <br><br>
-  <img src="media/ReadmeImages/IMG_8942.PNG" width="30%" alt="Theme Customization">
-  <img src="media/ReadmeImages/IMG_8943.PNG" width="30%" alt="Settings">
-  <img src="media/ReadmeImages/IMG_8944.PNG" width="30%" alt="Invite Screen">
+<div align="center" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 900px; margin: 0 auto;">
+  <div>
+    <h4>Admin Panel</h4>
+    <img src="media/ReadmeImages/IMG_8935.PNG" width="100%" alt="Home Feed">
+  </div>
+  <div>
+    <h4>Export Page</h4>
+    <img src="media/ReadmeImages/IMG_8938.PNG" width="100%" alt="Likes & Comments">
+  </div>
+  <div>
+    <h4>Customization</h4>
+    <img src="media/ReadmeImages/IMG_8939.PNG" width="100%" alt="Video Feed">
+  </div>
+  <div>
+    <h4>Tools Menu</h4>
+    <img src="media/ReadmeImages/IMG_8941.PNG" width="100%" alt="Admin Panel">
+  </div>
+  <div>
+    <h4>Themes</h4>
+    <img src="media/ReadmeImages/IMG_8942.PNG" width="100%" alt="Theme Customization">
+  </div>
+  <div>
+    <h4>Posting</h4>
+    <img src="media/ReadmeImages/IMG_8943.PNG" width="100%" alt="Settings">
+  </div>
+  <div>
+    <h4>IOS app</h4>
+    <img src="media/ReadmeImages/IMG_8944.PNG" width="100%" alt="Invite Screen">
+  </div>
+  <div>
+    <h4>Review Content</h4>
+    <img src="media/ReadmeImages/IMG_8945.PNG" width="100%" alt="Feature 1">
+  </div>
+  <div>
+    <h4>Posts</h4>
+    <img src="media/ReadmeImages/IMG_8946.PNG" width="100%" alt="Feature 2">
+  </div>
 </div>
 
 ---
