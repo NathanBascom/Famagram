@@ -22,6 +22,24 @@ A private, self-hosted photo and video sharing app for families and small groups
 
 ---
 
+## Screenshots
+
+<div align="center">
+  <img src="media/ReadmeImages/IMG_8935.PNG" width="30%" alt="Home Feed">
+  <img src="media/ReadmeImages/IMG_8936.PNG" width="30%" alt="Profile">
+  <img src="media/ReadmeImages/IMG_8938.PNG" width="30%" alt="Likes & Comments">
+  <br><br>
+  <img src="media/ReadmeImages/IMG_8939.PNG" width="30%" alt="Video Feed">
+  <img src="media/ReadmeImages/IMG_8940.PNG" width="30%" alt="User Profile">
+  <img src="media/ReadmeImages/IMG_8941.PNG" width="30%" alt="Admin Panel">
+  <br><br>
+  <img src="media/ReadmeImages/IMG_8942.PNG" width="30%" alt="Theme Customization">
+  <img src="media/ReadmeImages/IMG_8943.PNG" width="30%" alt="Settings">
+  <img src="media/ReadmeImages/IMG_8944.PNG" width="30%" alt="Invite Screen">
+</div>
+
+---
+
 ## Requirements
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Mac, Windows, or Linux)
