@@ -24,43 +24,9 @@ A private, self-hosted photo and video sharing app for families and small groups
 
 ## Screenshots
 
-<div align="center" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 600px; margin: 0 auto;">
-  <div>
-    <h4>Admin Panel</h4>
-    <img src="media/ReadmeImages/IMG_8935.PNG" width="100%" style="max-width: 180px;" alt="Home Feed">
-  </div>
-  <div>
-    <h4>Export Page</h4>
-    <img src="media/ReadmeImages/IMG_8938.PNG" width="100%" style="max-width: 180px;" alt="Likes & Comments">
-  </div>
-  <div>
-    <h4>Customization</h4>
-    <img src="media/ReadmeImages/IMG_8939.PNG" width="100%" style="max-width: 180px;" alt="Video Feed">
-  </div>
-  <div>
-    <h4>Tools Menu</h4>
-    <img src="media/ReadmeImages/IMG_8941.PNG" width="100%" style="max-width: 180px;" alt="Admin Panel">
-  </div>
-  <div>
-    <h4>Themes</h4>
-    <img src="media/ReadmeImages/IMG_8942.PNG" width="100%" style="max-width: 180px;" alt="Theme Customization">
-  </div>
-  <div>
-    <h4>Posting</h4>
-    <img src="media/ReadmeImages/IMG_8943.PNG" width="100%" style="max-width: 180px;" alt="Settings">
-  </div>
-  <div>
-    <h4>IOS app</h4>
-    <img src="media/ReadmeImages/IMG_8944.PNG" width="100%" style="max-width: 180px;" alt="Invite Screen">
-  </div>
-  <div>
-    <h4>Review Content</h4>
-    <img src="media/ReadmeImages/IMG_8945.PNG" width="100%" style="max-width: 180px;" alt="Feature 1">
-  </div>
-  <div>
-    <h4>Posts</h4>
-    <img src="media/ReadmeImages/IMG_8946.PNG" width="100%" style="max-width: 180px;" alt="Feature 2">
-  </div>
+<div align="center">
+  <h4>Famagram Options Preview</h4>
+  <img src="media/ReadmeImages/Famagram.png" width="100%" style="max-width: 500px;" alt="Famagram collage">
 </div>
 
 ---
