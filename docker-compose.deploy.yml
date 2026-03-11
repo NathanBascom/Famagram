@@ -20,13 +20,13 @@
 #                             generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 #       ADMIN_EMAIL         → email for the auto-created admin account
 #       ADMIN_PASSWORD      → strong password (20+ chars with upper, lower, number, symbol)
-#       APP_HOST            → scheme + hostname only (no port)
+#       APP_URL             → full public URL of your app (scheme + host + optional port)
 #                             local machine  → http://localhost
 #                             home server    → http://192.168.1.x
 #                             public domain  → https://photos.yourfamily.com
-#       PORT                → host port Docker exposes (default 80)
-#                             Change just this — the app URL and Google callback
-#                             are built automatically as  APP_HOST:PORT
+#       PORT                → host port Docker exposes on this machine (default 80)
+#                             Use PORT=5055 if you need a non-standard port, and include
+#                             the port in APP_URL too (e.g. APP_URL=http://host:8088)
 #
 #  4. Start the app:
 #        docker compose -f docker-compose.deploy.yml up -d
@@ -98,10 +98,10 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      GOOGLE_CALLBACK_URL: ${APP_HOST:-http://localhost}:${PORT:-80}/api/auth/google/callback
+      GOOGLE_CALLBACK_URL: ${APP_URL:-http://localhost}/api/auth/google/callback
       GOOGLE_ADMIN_EMAIL: ${GOOGLE_ADMIN_EMAIL:-}
       EXPORT_PASSWORD: ${EXPORT_PASSWORD:-}
-      FRONTEND_URL: ${APP_HOST:-http://localhost}:${PORT:-80}
+      FRONTEND_URL: ${APP_URL:-http://localhost}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_NAME: ${ADMIN_NAME:-Admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
