@@ -44,7 +44,7 @@
 #  4. Copy .env.vault.example to .env.vault and fill in VAULT_ADDR (and
 #     VAULT_SECRET_PATH / VAULT_NAMESPACE if you're not using the defaults),
 #     plus the same non-secret values as the standard .env.example
-#     (APP_URL, PORT, AUTH_MODE, ADMIN_NAME).
+#     (APP_URL, PORT, AUTH_MODE, ADMIN_NAME, VAPID_SUBJECT).
 #
 #  5. Start the app:
 #       docker compose -f docker-compose.vault.yml --env-file .env.vault up -d
@@ -122,6 +122,9 @@ services:
       FRONTEND_URL: ${APP_URL:?APP_URL must be set in .env.vault}
       ADMIN_NAME: ${ADMIN_NAME:-Admin}
       COOKIE_SECURE: ${COOKIE_SECURE:-}
+      # Not a secret (just a contact email/URL for push services) — so unlike
+      # VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY it comes from .env.vault, not Vault.
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       UPLOADS_DIR: /app/uploads
     volumes:
       - uploads_data:/app/uploads

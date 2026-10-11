@@ -194,6 +194,7 @@ Open `.env.vault` and fill in:
 | `PORT` | Host port Docker exposes (default `80`) |
 | `AUTH_MODE` | `local`, `google`, or `hybrid` |
 | `ADMIN_NAME` | Display name for the auto-created admin account |
+| `VAPID_SUBJECT` | Contact email/URL for push notifications, e.g. `mailto:admin@example.com` — not a secret; the VAPID key pair itself lives in Vault (step 3) |
 
 ### 6. Start the app
 
