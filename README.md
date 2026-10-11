@@ -70,9 +70,9 @@ Open `.env` in any text editor and set:
 | `ENCRYPTION_KEY` | A 64-character hex string — run `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `ADMIN_EMAIL` | Email for the auto-created admin account |
 | `ADMIN_PASSWORD` | Strong password (20+ chars, upper, lower, number, symbol) |
-| `FRONTEND_URL` | Where people will access the app (see below) |
+| `APP_URL` | Where people will access the app (see below) |
 
-**Setting `FRONTEND_URL`:**
+**Setting `APP_URL`:**
 - Running on your own laptop: `http://localhost`
 - Running on a home server (Raspberry Pi, NAS, etc.): `http://192.168.1.x` (your server's local IP)
 - Running on a public server with a domain: `https://photos.yourfamily.com`
@@ -89,7 +89,7 @@ Docker will download the images (first run takes a few minutes depending on your
 
 ### 5. Open the app
 
-Go to your `FRONTEND_URL` in a browser (default: [http://localhost](http://localhost)).
+Go to your `APP_URL` in a browser (default: [http://localhost](http://localhost)).
 
 Sign in with the `ADMIN_EMAIL` and `ADMIN_PASSWORD` you set in `.env`.
 
@@ -97,7 +97,124 @@ Sign in with the `ADMIN_EMAIL` and `ADMIN_PASSWORD` you set in `.env`.
 
 ---
 
+## Alternative: Fetching Secrets from HashiCorp Vault
+
+If you run HashiCorp Vault, you can use `docker-compose.vault.yml` instead of `docker-compose.deploy.yml`. It's the same deployment, except secret values (DB password, session secret, encryption key, Google OAuth credentials, admin credentials, export password) are fetched from Vault at container start via a Vault Agent sidecar (AppRole auth) instead of read from `.env`. Non-secret settings (ports, URLs, auth mode) still come from a config file, `.env.vault`. This is entirely optional — most self-hosters should stick with the plain `.env` setup above.
+
+### 1. Download the required files
+
+Save these into your `famagram/` folder, keeping the `vault/` folder structure exactly as shown — `docker-compose.vault.yml` looks for `agent.hcl` and `app.env.tpl` at these specific relative paths, so flattening them into one folder will break the bind mounts:
+
+```
+famagram/
+├── docker-compose.vault.yml
+├── .env.vault.example
+└── vault/
+    ├── agent.hcl
+    └── templates/
+        └── app.env.tpl
+```
+
+- [`docker-compose.vault.yml`](docker-compose.vault.yml)
+- [`.env.vault.example`](.env.vault.example)
+- `vault/agent.hcl`
+- `vault/templates/app.env.tpl`
+
+### 2. Enable AppRole auth and create a policy in Vault
+
+`<SECRET_LOCATION>` below is the KV v2 mount your Vault stores secrets under — `secret` is Vault's own default, but some setups mount it elsewhere (e.g. `kv`). Run `vault secrets list` if you're not sure which one applies to your server, and use that mount name everywhere `<SECRET_LOCATION>` appears in this section.
+
+```bash
+vault auth enable approle
+
+vault policy write famagram - <<EOF
+path "<SECRET_LOCATION>/data/famagram" {
+  capabilities = ["read"]
+}
+EOF
+
+vault write auth/approle/role/famagram \
+  token_policies="famagram" \
+  token_ttl=1h \
+  token_max_ttl=4h
+```
+
+### 3. Write the secret
+
+All fields below are required (leave Google/export fields as empty strings if unused):
+
+```bash
+vault kv put <SECRET_LOCATION>/famagram \
+  postgres_user="famagram" \
+  postgres_password="<REPLACE_WITH_SECRET>" \
+  session_secret="<REPLACE_WITH_SECRET>" \
+  encryption_key="<REPLACE_WITH_SECRET>" \
+  google_client_id="" \
+  google_client_secret="" \
+  google_admin_email="" \
+  admin_email="<REPLACE_WITH_EMAIL>" \
+  admin_password="<REPLACE_WITH_SECRET>" \
+  export_password=""
+```
+
+Generate `session_secret` and `encryption_key` the same way as in the standard `.env` setup (see the Quick Start table above).
+
+### 4. Generate the AppRole credentials
+
+```bash
+mkdir -p vault/auth
+
+vault read -field=role_id auth/approle/role/famagram/role-id \
+  > vault/auth/role_id
+
+vault write -f -field=secret_id auth/approle/role/famagram/secret-id \
+  > vault/auth/secret_id
+```
+
+`vault/auth/role_id` and `vault/auth/secret_id` are the credentials the Vault Agent sidecar uses to log in. Keep them as private as your `.env` file — never commit or share them.
+
+### 5. Create your configuration file
+
+```bash
+cp .env.vault.example .env.vault
+```
+
+Open `.env.vault` and fill in:
+
+| Variable | What to put |
+|---|---|
+| `VAULT_ADDR` | Your Vault server's URL, e.g. `<https://vault.example.com:8200>` |
+| `VAULT_NAMESPACE` | Leave blank unless you use Vault namespaces (Enterprise) |
+| `VAULT_SECRET_PATH` | `<SECRET_LOCATION>/data/famagram` — using the same `<SECRET_LOCATION>` mount from step 2 |
+| `APP_URL` | Same meaning as in the standard setup — see Quick Start above |
+| `PORT` | Host port Docker exposes (default `80`) |
+| `AUTH_MODE` | `local`, `google`, or `hybrid` |
+| `ADMIN_NAME` | Display name for the auto-created admin account |
+
+### 6. Start the app
+
+```bash
+docker compose -f docker-compose.vault.yml --env-file .env.vault up -d
+```
+
+The `vault-agent` service authenticates once at startup and renders the secrets into a tmpfs-backed volume (never written to disk); `postgres` and `backend` wait for it to become healthy before starting. Sign in the same way as in the standard setup (Step 5 of Quick Start above).
+
+### Vault-specific troubleshooting
+
+**`vault-agent` never becomes healthy / other containers stuck "Created"**
+```bash
+docker compose -f docker-compose.vault.yml logs vault-agent
+```
+Usually means `VAULT_ADDR` is unreachable from inside the container, the AppRole `role_id`/`secret_id` are wrong or expired, or the policy doesn't grant read on `VAULT_SECRET_PATH`.
+
+**Backend fails to start with a Postgres auth error**
+Confirm the secret at `VAULT_SECRET_PATH` has non-empty `postgres_user` and `postgres_password` fields — the Postgres container pulls its credentials from the same rendered file.
+
+---
+
 ## Useful Commands
+
+> These use `docker-compose.deploy.yml`. If you're running the Vault setup, swap in `-f docker-compose.vault.yml --env-file .env.vault` instead.
 
 ```bash
 # Check if containers are running
@@ -192,16 +309,17 @@ Instead of email/password login, you can use Google accounts.
 1. Go to [https://console.cloud.google.com/](https://console.cloud.google.com/)
 2. Create a project > APIs & Services > Credentials
 3. Create an **OAuth 2.0 Client ID** (Web application type)
-4. Add an **Authorized Redirect URI**: `https://yourdomain.com/api/auth/google/callback`
+4. Add an **Authorized Redirect URI**: `https://<yourdomain.com>/api/auth/google/callback` — this must match your `APP_URL` exactly (scheme + host + port)
 5. In your `.env` set:
 
 ```
 AUTH_MODE=google
-GOOGLE_CLIENT_ID=your_client_id_here
-GOOGLE_CLIENT_SECRET=your_client_secret_here
-GOOGLE_CALLBACK_URL=https://yourdomain.com/api/auth/google/callback
-GOOGLE_ADMIN_EMAIL=your.google.email@gmail.com
+GOOGLE_CLIENT_ID=<your_client_id_here>
+GOOGLE_CLIENT_SECRET=<your_client_secret_here>
+GOOGLE_ADMIN_EMAIL=<your.google.email@gmail.com>
 ```
+
+The callback URL isn't set directly — it's built automatically from `APP_URL` (`<APP_URL>/api/auth/google/callback`), which is why it has to match the redirect URI you registered with Google.
 
 `GOOGLE_ADMIN_EMAIL` is the Google account that automatically receives admin access on first login — set this to your own Google account.
 
@@ -212,7 +330,7 @@ GOOGLE_ADMIN_EMAIL=your.google.email@gmail.com
 Admins can download a ZIP of all photos and videos. To enable this feature, set a password in `.env`:
 
 ```
-EXPORT_PASSWORD=a_strong_password_here
+EXPORT_PASSWORD=<a_strong_password_here>
 ```
 
 Leave it blank to disable export entirely. In the Admin Panel, go to **Content** and use the Export button.
@@ -264,7 +382,7 @@ Look for error messages. The most common cause is a missing or malformed `.env` 
 
 **Can't log in / "Not authenticated" errors**
 - Make sure `SESSION_SECRET` is set in `.env` and is at least 32 characters
-- Make sure `FRONTEND_URL` matches the address you're using in the browser exactly (including `http://` vs `https://`)
+- Make sure `APP_URL` matches the address you're using in the browser exactly (including `http://` vs `https://`)
 
 **Photos not loading / all media broken**
 - Your `ENCRYPTION_KEY` may have changed. Media encrypted with a different key cannot be decrypted. Restore from backup.

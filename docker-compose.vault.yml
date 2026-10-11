@@ -1,0 +1,173 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Famagram — Deployment Compose (secrets fetched from HashiCorp Vault)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+#  This is the same deployment as docker-compose.deploy.yml, except the
+#  secret values (DB password, session secret, encryption key, Google OAuth
+#  credentials, admin credentials, export password) are fetched at container
+#  start from Vault instead of read from .env. Non-secret settings (ports,
+#  URLs, auth mode) still come from .env.vault.
+#
+#  SETUP
+#  ─────────────────────────────────────────────────────────────────────────────
+#  1. In Vault, enable AppRole auth and write a policy that can read your
+#     secret path (default: secret/data/famagram):
+#
+#       vault auth enable approle
+#       vault policy write famagram - <<EOF
+#       path "secret/data/famagram" {
+#         capabilities = ["read"]
+#       }
+#       EOF
+#       vault write auth/approle/role/famagram token_policies="famagram" \
+#         token_ttl=1h token_max_ttl=4h
+#
+#  2. Write the secret (all fields below are required):
+#
+#       vault kv put secret/famagram \
+#         postgres_user="famagram" \
+#         postgres_password="<REPLACE_WITH_SECRET>" \
+#         session_secret="<REPLACE_WITH_SECRET>" \
+#         encryption_key="<REPLACE_WITH_SECRET>" \
+#         google_client_id="" \
+#         google_client_secret="" \
+#         google_admin_email="" \
+#         admin_email="<REPLACE_WITH_EMAIL>" \
+#         admin_password="<REPLACE_WITH_SECRET>" \
+#         export_password=""
+#
+#  3. Fetch the role's credentials and save them as files (never commit these):
+#
+#       vault read -field=role_id   auth/approle/role/famagram/role-id   > vault/auth/role_id
+#       vault write -f -field=secret_id auth/approle/role/famagram/secret-id > vault/auth/secret_id
+#
+#  4. Copy .env.vault.example to .env.vault and fill in VAULT_ADDR (and
+#     VAULT_SECRET_PATH / VAULT_NAMESPACE if you're not using the defaults),
+#     plus the same non-secret values as the standard .env.example
+#     (APP_URL, PORT, AUTH_MODE, ADMIN_NAME).
+#
+#  5. Start the app:
+#       docker compose -f docker-compose.vault.yml --env-file .env.vault up -d
+#
+#  The vault-agent sidecar authenticates once at startup, renders the
+#  secrets into a tmpfs-backed volume (never written to disk), and the
+#  postgres/backend entrypoints source that file before starting.
+# ══════════════════════════════════════════════════════════════════════════════
+services:
+  vault-agent:
+    image: hashicorp/vault:1.17
+    container_name: famagram-vault-agent
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: ${VAULT_ADDR}
+      VAULT_NAMESPACE: ${VAULT_NAMESPACE:-}
+      VAULT_SECRET_PATH: ${VAULT_SECRET_PATH:-secret/data/famagram}
+    command: ["vault", "agent", "-config=/vault/config/agent.hcl"]
+    volumes:
+      - ./vault/agent.hcl:/vault/config/agent.hcl:ro
+      - ./vault/templates/app.env.tpl:/vault/config/app.env.tpl:ro
+      - ./vault/auth/role_id:/vault/config/role_id:ro
+      - ./vault/auth/secret_id:/vault/config/secret_id:ro
+      - vault_secrets:/vault/secrets
+    healthcheck:
+      test: ["CMD", "test", "-f", "/vault/secrets/app.env"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: famagram-db
+    restart: unless-stopped
+    depends_on:
+      vault-agent:
+        condition: service_healthy
+    environment:
+      POSTGRES_DB: famagram
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - vault_secrets:/vault/secrets:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -a
+        . /vault/secrets/app.env
+        set +a
+        exec docker-entrypoint.sh postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d famagram"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: nathanbascom/famagram-backend:latest
+    container_name: famagram-backend
+    restart: unless-stopped
+    pull_policy: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vault-agent:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      AUTH_MODE: ${AUTH_MODE:-local}
+      GOOGLE_CALLBACK_URL: ${APP_URL:?APP_URL must be set in .env.vault}/api/auth/google/callback
+      FRONTEND_URL: ${APP_URL:?APP_URL must be set in .env.vault}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+      - vault_secrets:/vault/secrets:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -a
+        . /vault/secrets/app.env
+        export DATABASE_URL="postgresql://$$POSTGRES_USER:$$POSTGRES_PASSWORD@postgres:5432/famagram"
+        set +a
+        exec sh -c "npx prisma migrate deploy && node src/index.js"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    image: nathanbascom/famagram-frontend:latest
+    container_name: famagram-frontend
+    restart: unless-stopped
+    pull_policy: always
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  nginx:
+    image: nathanbascom/famagram-nginx:latest
+    container_name: famagram-nginx
+    restart: unless-stopped
+    pull_policy: always
+    ports:
+      - "${PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  uploads_data:
+  vault_secrets:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
