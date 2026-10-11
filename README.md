@@ -6,11 +6,13 @@ A private, self-hosted photo and video sharing app for families and small groups
 
 ## Features
 
-- Photo and video sharing feed
+- Photo and video sharing feed, with up to 10 photos per post
 - Short-video "Vids" page (TikTok-style vertical scroll)
 - Likes and comments on all posts
 - Profile pages with custom avatars
+- Pinch-to-zoom and pan on photos
 - Per-user customizable background themes
+- Push notifications — choose specific people to be notified about
 - Admin panel: user management, invite links, content moderation, media export
 - Three user roles: Poster, Reader, Viewer
 - Login with email/password or Google OAuth
@@ -18,7 +20,7 @@ A private, self-hosted photo and video sharing app for families and small groups
 - Add to Home Screen on iOS and Android (works as a PWA)
 - All photos and videos encrypted at rest with AES-256-GCM
 - Content blurs automatically when you switch apps (privacy screen)
-- Customizable app name (up to 15 letters, set in Admin > Settings)
+- Customizable app name and color (up to 15 characters, set in Admin > Settings)
 
 ---
 
@@ -141,7 +143,7 @@ vault write auth/approle/role/famagram \
 
 ### 3. Write the secret
 
-All fields below are required (leave Google/export fields as empty strings if unused):
+All fields below are required (leave Google/export/push fields as empty strings if unused):
 
 ```bash
 vault kv put <SECRET_LOCATION>/famagram \
@@ -154,10 +156,12 @@ vault kv put <SECRET_LOCATION>/famagram \
   google_admin_email="" \
   admin_email="<REPLACE_WITH_EMAIL>" \
   admin_password="<REPLACE_WITH_SECRET>" \
-  export_password=""
+  export_password="" \
+  vapid_public_key="" \
+  vapid_private_key=""
 ```
 
-Generate `session_secret` and `encryption_key` the same way as in the standard `.env` setup (see the Quick Start table above).
+Generate `session_secret` and `encryption_key` the same way as in the standard `.env` setup (see the Quick Start table above). Generate `vapid_public_key`/`vapid_private_key` with `npx web-push generate-vapid-keys` (see **Push Notifications** below) — leave both blank to disable push entirely.
 
 ### 4. Generate the AppRole credentials
 
@@ -273,7 +277,7 @@ Access via the gear icon in the bottom navigation bar (admin accounts only).
 | **Content** | View and delete any post |
 | **Invites** | Generate invite links for new members |
 | **Logs** | Activity log (logins, uploads, admin actions) |
-| **Settings** | Customize the app name (up to 15 letters) |
+| **Settings** | Customize the app name and color (up to 15 characters) |
 
 ### Resetting a User's Password
 
@@ -334,6 +338,30 @@ EXPORT_PASSWORD=<a_strong_password_here>
 ```
 
 Leave it blank to disable export entirely. In the Admin Panel, go to **Content** and use the Export button.
+
+---
+
+## Push Notifications
+
+Users can choose specific other users to get notified about — "tell me when Mom posts," not an all-or-nothing firehose. To enable it, set a VAPID keypair in `.env`:
+
+```
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:admin@example.com
+```
+
+Generate the keypair with:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Leave both keys blank to disable push notifications entirely — the rest of the app works normally without them.
+
+Each person turns notifications on for themselves from the profile menu (**Notifications**) and picks who to be notified about. The notification itself never contains a caption or photo — just "new post," so nothing private shows up on a lock screen; tapping it opens the real post.
+
+**iOS limitation:** push notifications only work once the app has been added to the Home Screen (Safari's Share > Add to Home Screen), and only on iOS 16.4 or later. There's no way around this — it's an Apple restriction, not something this app can fix. The in-app notification settings screen explains this and walks through the install steps when it detects it's running in regular Safari instead of as an installed app.
 
 ---
 

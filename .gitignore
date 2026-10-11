@@ -1,4 +1,7 @@
 .env
 .env.vault
+.env.*
+!.env.example
+!.env.vault.example
 vault/auth/
 .DS_Store

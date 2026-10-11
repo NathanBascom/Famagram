@@ -22,11 +22,12 @@
 #       ADMIN_PASSWORD      → strong password (20+ chars with upper, lower, number, symbol)
 #       APP_URL             → full public URL of your app (scheme + host + optional port)
 #                             local machine  → http://localhost
-#                             home server    → http://192.168.1.x
-#                             public domain  → https://photos.example.com
+#                             home server    → http://192.168.1.x:8080
+#                             public domain  → https://photos.yourfamily.com
+#                             custom port    → https://thegram.example.com:5055
 #       PORT                → host port Docker exposes on this machine (default 80)
 #                             Use PORT=5055 if you need a non-standard port, and include
-#                             the port in APP_URL too (e.g. APP_URL=http://host:8088)
+#                             the port in APP_URL too (e.g. APP_URL=http://host:5055)
 #
 #  4. Start the app:
 #        docker compose -f docker-compose.deploy.yml up -d
@@ -96,6 +97,7 @@ services:
       AUTH_MODE: ${AUTH_MODE:-local}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set in .env}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_CALLBACK_URL: ${APP_URL:?APP_URL must be set in .env}/api/auth/google/callback
@@ -106,6 +108,9 @@ services:
       ADMIN_NAME: ${ADMIN_NAME:-Admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}
       UPLOADS_DIR: /app/uploads
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     volumes:
       - uploads_data:/app/uploads
     healthcheck:
@@ -114,6 +119,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    mem_limit: 1g
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
   frontend:
     image: nathanbascom/famagram-frontend:latest
@@ -123,6 +133,10 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
   nginx:
     image: nathanbascom/famagram-nginx:latest
@@ -136,6 +150,13 @@ services:
         condition: service_healthy
       frontend:
         condition: service_started
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
 
 volumes:
   postgres_data:

@@ -9,4 +9,6 @@ GOOGLE_ADMIN_EMAIL={{ .Data.data.google_admin_email }}
 ADMIN_EMAIL={{ .Data.data.admin_email }}
 ADMIN_PASSWORD={{ .Data.data.admin_password }}
 EXPORT_PASSWORD={{ .Data.data.export_password }}
+VAPID_PUBLIC_KEY={{ .Data.data.vapid_public_key }}
+VAPID_PRIVATE_KEY={{ .Data.data.vapid_private_key }}
 {{- end }}
