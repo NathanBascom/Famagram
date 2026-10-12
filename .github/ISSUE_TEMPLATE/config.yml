@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/NathanBascom/Famagram/security/advisories/new
+    # (Full absolute URL, not relative — GitHub renders config.yml contact
+    # links on the issue chooser page, where a relative path resolves
+    # against the wrong base.)
+    about: Please report security vulnerabilities privately rather than as a public issue — see SECURITY.md.

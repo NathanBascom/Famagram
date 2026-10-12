@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest an idea for Famagram
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Famagram's application source lives outside this repo (see
+        [CONTRIBUTING.md](../../CONTRIBUTING.md)), so feature requests here
+        are triaged by the maintainer rather than implemented via PR to this
+        repository. There's no guaranteed timeline, but every request is read.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: What are you trying to do that the app doesn't currently support?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds or other approaches you've tried.
+    validations:
+      required: false

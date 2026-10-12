@@ -34,7 +34,9 @@
 #         google_admin_email="" \
 #         admin_email="<REPLACE_WITH_EMAIL>" \
 #         admin_password="<REPLACE_WITH_SECRET>" \
-#         export_password=""
+#         export_password="" \
+#         vapid_public_key="" \
+#         vapid_private_key=""
 #
 #  3. Fetch the role's credentials and save them as files (never commit these):
 #
