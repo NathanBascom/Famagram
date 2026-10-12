@@ -23,5 +23,5 @@ auto_auth {
 template {
   source      = "/vault/config/app.env.tpl"
   destination = "/vault/secrets/app.env"
-  perms       = "0440"
+  perms       = "0444"
 }
