@@ -2,6 +2,34 @@
 
 New features in each Famagram release.
 
+## [1.5.2] - 2026-10-13
+
+### Added
+- Stories: share a photo or short (up to 10 seconds) video that disappears
+  after 48 hours. Add one by taking a photo/video with your camera or
+  picking one from your library, from the ring at the top of your feed.
+- Like stories, and — for your own — see who's viewed and liked them.
+- A notification when someone you follow posts a new story.
+- Save posts for later: a bookmark button on every post, and a new Saved
+  page (bookmark icon in the header, next to notifications).
+
+### Changed
+- The delete-comment button is now black instead of light gray/red.
+- Likes never trigger a notification — only comments and new stories do.
+
+## [1.5.1] - 2026-10-12
+
+### Added
+- A Notifications tab (bell icon in the header) showing who commented on
+  your posts, with an unread badge. Tapping one jumps straight to that post
+  and comment thread.
+
+### Changed
+- Comment deletion: the author of a post can now delete any comment on it,
+  in addition to the comment's own author and admins.
+- Vids: the like/comment/share/mute buttons now line up with the username
+  and caption instead of sitting noticeably higher.
+
 ## [1.5.0] - 2026-10-12
 
 ### Added
