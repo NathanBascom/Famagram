@@ -16,6 +16,10 @@ New features in each Famagram release.
 ### Changed
 - The delete-comment button is now black instead of light gray/red.
 - Likes never trigger a notification — only comments and new stories do.
+- Deleting a comment now asks for confirmation first, same as a post or
+  story.
+- Stories bar: a dedicated New Story button now sits at the far left,
+  separated by a divider from the row of posted stories.
 
 ## [1.5.1] - 2026-10-12
 
